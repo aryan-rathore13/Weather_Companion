@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weather Gateway</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .background-lines {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      background: linear-gradient(0deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+      background-size: 100% 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    h1 {
+      font-size: 2.5rem;
+      text-align: center;
+      background: linear-gradient(to bottom, #333, #999);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin: 0;
+      padding: 10px 0;
+      font-weight: bold;
+      line-height: 1.2;
+    }
+    @media (min-width: 768px) {
+      h1 { font-size: 4rem; }
+    }
+    p {
+      max-width: 600px;
+      text-align: center;
+      color: #666;
+      font-size: 1rem;
+      margin: 10px 0 20px;
+    }
+    @media (min-width: 768px) {
+      p { font-size: 1.2rem; }
+    }
+    .form-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    input {
+      padding: 8px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 1rem;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #555;
+    }
+    #results {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      max-width: 600px;
+      width: 100%;
+      text-align: left;
+    }
+    #results h3 {
+      margin-top: 0;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="background-lines">
+    <h1>Weather Companion, <br>Seamless weather reports</h1>
+    <p>
+      Your one stop shop for weather reports. Enter a city name to get the current weather conditions.
+    </p>
+    <div class="form-container">
+      <input type="text" id="cityInput" placeholder="Enter city (e.g., London)">
+      <button onclick="getWeather()">Get Weather</button>
+      <button onclick="getForecast()">Get Forecast</button>
+    </div>
+    <div id="results"></div>
+  </div>
+
+  <script>
+    const resultsDiv = document.getElementById('results');
+
+    async function getWeather() {
+      const city = document.getElementById('cityInput').value;
+      if (!city) {
+        resultsDiv.innerHTML = '<p>Please enter a city.</p>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/weather/${city}`);
+        const data = await res.json();
+        if (res.ok) {
+          const { location, current } = data;
+          resultsDiv.innerHTML = `
+            <h3>Current Weather in ${location.name}, ${location.country}</h3>
+            <p>Temperature: ${current.temp_c}°C</p>
+            <p>Condition: ${current.condition.text}</p>
+            <p>Last Updated: ${current.last_updated}</p>
+          `;
+        } else {
+          resultsDiv.innerHTML = `<p>Error: ${data.error.message}</p>`;
+        }
+      } catch (error) {
+        resultsDiv.innerHTML = '<p>Failed to fetch weather data.</p>';
+      }
+    }
+
+    async function getForecast() {
+      const city = document.getElementById('cityInput').value;
+      if (!city) {
+        resultsDiv.innerHTML = '<p>Please enter a city.</p>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/forecast/${city}`);
+        const data = await res.json();
+        if (res.ok) {
+          const { location, forecast } = data;
+          let forecastHtml = `<h3>5-Day Forecast for ${location.name}, ${location.country}</h3>`;
+          forecast.forecastday.forEach(day => {
+            forecastHtml += `
+              <p>${day.date}: ${day.day.avgtemp_c}°C, ${day.day.condition.text}</p>
+            `;
+          });
+          resultsDiv.innerHTML = forecastHtml;
+        } else {
+          resultsDiv.innerHTML = `<p>Error: ${data.error.message}</p>`;
+        }
+      } catch (error) {
+        resultsDiv.innerHTML = '<p>Failed to fetch forecast data.</p>';
+      }
+    }
+  </script>
+</body>
+</html>
